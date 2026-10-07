@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>农林碳汇量化测算模型 · 交互原型（工行杯 6.1）</title>
+<style>
+  :root{
+    --green-900:#0a3d2a; --green-700:#0f5d3f; --green-500:#1a8a5e;
+    --gold:#c9a227; --red:#c7000b; --ink:#1c2b25; --ink-2:#4a5d55;
+    --bg:#f2f6f3; --card:#ffffff; --line:#dbe5de; --soft:#eef4f0;
+    --shadow:0 1px 2px rgba(10,61,42,.06),0 8px 24px rgba(10,61,42,.07);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+    font-size:14px; line-height:1.6;
+  }
+  header.top{
+    background:linear-gradient(120deg,#0a3d2a 0%,#0f5d3f 55%,#12734b 100%);
+    color:#fff; padding:16px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    box-shadow:0 2px 12px rgba(10,61,42,.25);
+  }
+  header.top .logo{
+    width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.14);
+    display:grid;place-items:center;font-weight:700;font-size:16px;letter-spacing:1px;
+    border:1px solid rgba(255,255,255,.25);
+  }
+  header.top h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.5px;}
+  header.top p{margin:2px 0 0;font-size:12px;color:#bfe3d0;}
+  header.top .spacer{flex:1;}
+  .badge{
+    display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#e8f6ee;
+  }
+  main{display:grid;grid-template-columns:370px minmax(0,1fr);gap:18px;padding:18px 24px 8px;align-items:start;}
+  @media (max-width:1080px){main{grid-template-columns:1fr;}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);}
+  aside.panel{padding:0;position:sticky;top:14px;max-height:calc(100vh - 40px);overflow:auto;}
+  @media (max-width:1080px){aside.panel{position:static;max-height:none;}}
+  .panel-head{
+    padding:13px 16px;border-bottom:1px solid var(--line);font-weight:700;color:var(--green-900);
+    display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:3;
+    border-radius:14px 14px 0 0;
+  }
+  .panel-body{padding:6px 16px 16px;}
+  .grp{padding:12px 0;border-bottom:1px dashed var(--line);}
+  .grp:last-child{border-bottom:none;}
+  .grp>.t{font-size:12px;font-weight:700;color:var(--green-700);letter-spacing:1px;margin-bottom:10px;display:flex;gap:6px;align-items:center;}
+  .grp>.t::before{content:"";width:3px;height:13px;background:var(--gold);border-radius:2px;}
+  label.f{display:block;font-size:12.5px;color:var(--ink-2);margin:9px 0 4px;}
+  select,input[type=number]{
+    width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font:inherit;
+    background:#fcfefd;color:var(--ink);
+  }
+  select:focus,input:focus{outline:2px solid #bfe3d0;outline-offset:0;border-color:var(--green-500);}
+  input[type=range]{width:100%;accent-color:var(--green-700);margin:6px 0 2px;}
+  .rowline{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+  .val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--green-900);font-size:13px;}
+  .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+  .seg button{
+    flex:1;padding:7px 0;border:0;background:#fbfdfc;font:inherit;font-size:12.5px;color:var(--ink-2);
+    cursor:pointer;border-right:1px solid var(--line);transition:.15s;
+  }
+  .seg button:last-child{border-right:0;}
+  .seg button.on{background:var(--green-700);color:#fff;font-weight:700;}
+  .seg button:hover:not(.on){background:var(--soft);}
+  .presets{display:flex;flex-wrap:wrap;gap:6px;}
+  .presets button{
+    padding:5px 10px;border:1px solid var(--line);background:#fff;border-radius:999px;
+    font:inherit;font-size:12px;color:var(--green-700);cursor:pointer;transition:.15s;
+  }
+  .presets button:hover{background:var(--soft);border-color:var(--green-500);}
+  section.result{display:flex;flex-direction:column;gap:14px;min-width:0;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .tabs button{
+    padding:8px 15px;border:1px solid var(--line);background:#fff;border-radius:10px;font:inherit;
+    font-size:13px;color:var(--ink-2);cursor:pointer;transition:.15s;font-weight:600;
+  }
+  .tabs button.on{background:var(--green-900);color:#fff;border-color:var(--green-900);}
+  .tabpane{display:none;}
+  .tabpane.on{display:block;}
+  .ks{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px;}
+  .kpi{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green-500);}
+  .kpi.gold::after{background:var(--gold);}
+  .kpi.red::after{background:var(--red);}
+  .kpi .k{font-size:12px;color:var(--ink-2);display:flex;justify-content:space-between;gap:6px;}
+  .kpi .v{font-size:24px;font-weight:800;color:var(--green-900);letter-spacing:-.5px;font-variant-numeric:tabular-nums;margin-top:4px;}
+  .kpi .v small{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-left:3px;}
+  .kpi .s{font-size:11.5px;color:#7d8f87;margin-top:3px;}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);}
+  .box h3{margin:0 0 4px;font-size:14px;color:var(--green-900);display:flex;align-items:center;gap:8px;}
+  .box h3 .tag{font-size:11px;font-weight:600;color:var(--green-700);background:var(--soft);border:1px solid var(--line);padding:1px 8px;border-radius:999px;}
+  .box .desc{font-size:12.5px;color:var(--ink-2);margin:0 0 12px;}
+  .grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr;}}
+  svg{width:100%;height:auto;display:block;}
+  .bars{display:flex;flex-direction:column;gap:11px;}
+  .bar .lb{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:4px;}
+  .bar .lb b{color:var(--green-900);font-variant-numeric:tabular-nums;}
+  .track{height:11px;border-radius:6px;background:var(--soft);overflow:hidden;}
+  .track>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#1a8a5e,#0f5d3f);}
+  .track>i.gold{background:linear-gradient(90deg,#e0bc4b,#c9a227);}
+  .flow{display:grid;grid-template-columns:1fr 26px 1fr 26px 1fr;gap:0;align-items:stretch;}
+  @media (max-width:820px){.flow{grid-template-columns:1fr;}.flow .arrow{transform:rotate(90deg);justify-self:center;}}
+  .layer{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfdfc;}
+  .layer h4{margin:0 0 8px;font-size:13px;color:#fff;background:var(--green-700);display:inline-block;padding:2px 10px;border-radius:999px;}
+  .layer ul{margin:0;padding-left:17px;font-size:12.5px;color:var(--ink-2);}
+  .layer li{margin:3px 0;}
+  .arrow{display:grid;place-items:center;color:var(--green-500);font-size:19px;font-weight:700;}
+  .formula{
+    background:#0d2f22;color:#c9f0dc;border-radius:12px;padding:14px 16px;font-family:Consolas,"Cascadia Mono",monospace;
+    font-size:12.5px;line-height:2;overflow-x:auto;
+  }
+  .formula em{color:#f0d98a;font-style:normal;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;}
+  th{background:var(--soft);color:var(--green-900);font-weight:700;}
+  td.num{font-variant-numeric:tabular-nums;text-align:right;}
+  .note{
+    display:flex;gap:9px;padding:11px 13px;border-radius:11px;font-size:12.5px;line-height:1.65;
+    background:#fff8e6;border:1px solid #f0dfae;color:#6b5518;
+  }
+  .note.info{background:#eef6f1;border-color:#cfe6d9;color:#28503f;}
+  .note.warn{background:#fdeeee;border-color:#f4cfd1;color:#8a2b30;}
+  .note b{color:inherit;}
+  .copybox{
+    margin-top:10px;background:#fbfdfc;border:1px dashed var(--line);border-radius:10px;padding:11px 13px;
+    font-family:Consolas,monospace;font-size:12px;color:var(--ink-2);white-space:pre-wrap;line-height:1.75;
+  }
+  .btn{
+    padding:8px 14px;border-radius:9px;border:1px solid var(--green-700);background:var(--green-700);color:#fff;
+    font:inherit;font-size:13px;cursor:pointer;font-weight:600;transition:.15s;
+  }
+  .btn:hover{background:var(--green-900);border-color:var(--green-900);}
+  .btn.ghost{background:#fff;color:var(--green-700);}
+  .btn.ghost:hover{background:var(--soft);}
+  footer{padding:8px 24px 26px;color:#7d8f87;font-size:12px;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:6px;}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--soft);border:1px solid var(--line);font-size:11.5px;color:var(--green-700);margin-right:5px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="logo">工行</div>
+  <div>
+    <h1>6.1 农林碳汇量化测算模型 · 交互原型</h1>
+    <p>数据层 → 模型层 → 产出层｜轻量化遥感碳汇估值引擎（可调参数 · 实时测算 · 区间输出）</p>
+  </div>
+  <div class="spacer"></div>
+  <span class="badge">BEF 蓄积量扩展法</span>
+  <span class="badge">Sentinel-2 10m</span>
+  <span class="badge">区间化输出</span>
+</header>
+
+<main>
+  <!-- ============ 左侧参数面板 ============ -->
+  <aside class="card panel">
+    <div class="panel-head">
+      <span>参数输入</span>
+      <button class="btn ghost" id="resetBtn" style="padding:4px 10px;font-size:12px;">恢复默认</button>
+    </div>
+    <div class="panel-body">
+
+      <div class="grp">
+        <div class="t">预设场景（一键带入）</div>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="grp">
+        <div class="t">① 地块与林分</div>
+        <label class="f">区域（影响分省树种参数与碳价基准）</label>
+        <select id="region">
+          <option>福建 · 三明</option>
+          <option>江西 · 赣州</option>
+          <option>浙江 · 安吉</option>
+          <option>广西 · 河池</option>
+          <option>云南 · 大理</option>
+          <option>湖南 · 怀化</option>
+        </select>
+
+        <label class="f">主要树种 / 林种</label>
+        <select id="tree"></select>
+
+        <div class="rowline"><label class="f">林地面积</label><span class="val"><span id="areaV">50</span> 亩</span></div>
+        <input type="range" id="area" min="3" max="300" step="1" value="50">
+
+        <div class="rowline"><label class="f">现有林龄</label><span class="val"><span id="ageV">12</span> 年</span></div>
+        <input type="range" id="age" min="2" max="40" step="1" value="12">
+      </div>
+
+      <div class="grp">
+        <div class="t">② 生境与经营</div>
+        <label class="f">立地条件（地位级）</label>
+        <div class="seg" id="siteSeg">
+          <button data-v="好">好</button><button data-v="中" class="on">中</button><button data-v="差">差</button>
+        </div>
+
+        <label class="f">遥感反演冠层郁闭度</label>
+        <input type="range" id="crown" min="0.40" max="0.90" step="0.01" value="0.75">
+        <div class="rowline"><span style="font-size:11.5px;color:#8b9a93;">0.40 稀疏</span><span class="val" id="crownV">0.75</span><span style="font-size:11.5px;color:#8b9a93;">0.90 郁闭</span></div>
+
+        <label class="f">管护水平</label>
+        <div class="seg" id="mgmtSeg">
+          <button data-v="优">精细</button><button data-v="中" class="on">常规</button><button data-v="差">粗放</button>
+        </div>
+
+        <label class="f">林分结构（决定估值误差带）</label>
+        <div class="seg" id="structSeg">
+          <button data-v="pure" class="on">人工纯林 ±15%</button><button data-v="mixed">混交异龄 ±25%</button>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="t">③ 估值情景</div>
+        <div class="rowline"><label class="f">碳价基准（元 / 吨CO₂）</label><span class="val" id="priceV">50</span></div>
+        <input type="range" id="price" min="20" max="120" step="1" value="50">
+        <div style="font-size:11.5px;color:#8b9a93;">= 近 3 年全国碳市场成交均价 × 80%（保守口径）</div>
+
+        <label class="f">折现率</label>
+        <div class="seg" id="rateSeg">
+          <button data-v="0.03" class="on">3%</button><button data-v="0.04">4%</button><button data-v="0.05">5%</button>
+        </div>
+
+        <div class="rowline"><label class="f">首次可交易年（自建档起）</label><span class="val"><span id="t0V">3</span> 年</span></div>
+        <input type="range" id="t0" min="1" max="10" step="1" value="3">
+
+        <div class="rowline"><label class="f">收益评估期</label><span class="val"><span id="yrV">10</span> 年</span></div>
+        <input type="range" id="yrs" min="5" max="20" step="1" value="10">
+      </div>
+
+      <div class="grp">
+        <div class="t">④ 信用维度（授信折算用）</div>
+        <label class="f">林地经营权确权</label>
+        <div class="seg" id="certSeg">
+          <button data-v="1" class="on">已确权</button><button data-v="0">未确权</button>
+        </div>
+
+        <div class="rowline"><label class="f">剩余承包年限</label><span class="val"><span id="tenureV">15</span> 年</span></div>
+        <input type="range" id="tenure" min="2" max="40" step="1" value="15">
+
+        <div class="rowline"><label class="f">经营年限</label><span class="val"><span id="expV">6</span> 年</span></div>
+        <input type="range" id="exp" min="0" max="30" step="1" value="6">
+
+        <label class="f">年管护投入</label>
+        <div class="seg" id="inputSeg">
+          <button data-v="2">≥2000元/亩</button><button data-v="1" class="on">1000-2000</button><button data-v="0">&lt;1000元/亩</button>
+        </div>
+
+        <label class="f">政策性林业保险</label>
+        <div class="seg" id="insSeg">
+          <button data-v="1" class="on">已参保</button><button data-v="0">未参保</button>
+        </div>
+
+        <label class="f">主体征信</label>
+        <select id="credit">
+          <option value="90">无不良记录</option>
+          <option value="70" selected>无信贷记录（信用白户）</option>
+          <option value="45">有瑕疵记录</option>
+        </select>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ============ 右侧结果区 ============ -->
+  <section class="result">
+
+    <div class="tabs" id="tabs">
+      <button class="on" data-tab="quant">量化测算结果</button>
+      <button data-tab="arch">模型架构</button>
+      <button data-tab="sens">敏感性分析</button>
+      <button data-tab="credit">增信应用</button>
+      <button data-tab="bound">精度与边界</button>
+    </div>
+
+    <!-- ---- 量化结果 ---- -->
+    <div class="tabpane on" id="tab-quant">
+      <div class="ks" id="kpis"></div>
+
+      <div class="grid2" style="margin-top:14px;">
+        <div class="box">
+          <h3>年固碳量随林龄变化曲线 <span class="tag">模型层输出</span></h3>
+          <p class="desc">阴影为收益评估期；虚线为当前林龄位置。曲线由树种生长模型（Richards 型）逐级推导，非经验套数。</p>
+          <div id="chart"></div>
+          <div class="legend">
+            <span><i style="background:#1a8a5e"></i>年固碳量（tCO₂/亩·年）</span>
+            <span><i style="background:#c9a227"></i>评估期</span>
+            <span><i style="background:#c7000b"></i>当前林龄</span>
+          </div>
+        </div>
+
+        <div class="box">
+          <h3>测算摘要 <span class="tag">产出层</span></h3>
+          <p class="desc">可直接粘入评估报告 / 信贷卷宗的标准化输出字段。</p>
+          <div class="copybox" id="summary"></div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn" id="copyBtn">复制摘要</button>
+            <button class="btn ghost" id="printBtn">打印 / 存 PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- 模型架构 ---- -->
+    <div class="tabpane" id="tab-arch">
+      <div class="box">
+        <h3>三层架构：数据层 → 模型层 → 产出层 <span class="tag">6.1（2）架构要点</span></h3>
+        <p class="desc">各层通过标准化接口对接，可整体嵌入银行现有技术体系；模型层内部再拆为四个子模型，串行而不并联。</p>
+        <div class="flow">
+          <div class="layer">
+            <h4>数据层</h4>
+            <ul>
+              <li>多源遥感影像：Sentinel-2（10m / 5天重访）+ 国产高分系列 + 地方林业监测卫星</li>
+              <li>地块矢量数据：确权登记库、1:10000 地籍数据、国土空间规划剔除项</li>
+              <li>林木信息：树种、树龄、郁闭度、树高、连片度</li>
+              <li>气象与灾害史：降水、积温、旱涝、火险、病虫害记录</li>
+              <li>市场数据：全国碳市场近 3 年成交均价、区域自愿碳市场行情</li>
+            </ul>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="layer">
+            <h4>模型层</h4>
+            <ul>
+              <li>① 蓄积量反演子模型：遥感参数 → 林分蓄积量 V(t)</li>
+              <li>② 碳储量转换子模型：BEF 蓄积量扩展法 B→C</li>
+              <li>③ 干扰因子修正：管护、灾害、立地、郁闭度</li>
+              <li>④ 收益情景与区间模型：现值法 + 碳价情景 + 不确定性区间</li>
+              <li>区域参数自适应：以固定监测样地实测值回炉校准</li>
+            </ul>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="layer">
+            <h4>产出层</h4>
+            <ul>
+              <li>年固碳量（tCO₂/亩·年，区间形式）</li>
+              <li>评估期累计固碳量（tCO₂）</li>
+              <li>未来碳汇收益区间与现值</li>
+              <li>碳价敏感性分析结果</li>
+              <li>碳汇增信参考值（供评分模型调用）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px;">
+        <div class="box">
+          <h3>核心公式链 <span class="tag">可解释 · 可复核</span></h3>
+          <p class="desc">全部采用国家林草局《造林项目碳汇计量监测指南》与国家森林生物量清单的公开参数体系，不含黑箱。</p>
+          <div class="formula">
+<em>① 蓄积量生长（Richards 型）</em>
+V(t) = V<sub>cap</sub> · S<sub>立地</sub> · D<sub>郁闭</sub> · φ<sub>管护</sub> · [1 − e<sup>−k·t</sup>]<sup>m</sup>      （m³/ha）
+
+<em>② 生物量（BEF 蓄积量扩展法）</em>
+B(t) = V(t) · WD · BEF · (1 + R)                        （t/ha 干重）
+
+<em>③ 碳储量与年固碳量</em>
+C(t) = B(t) · CF                                        （tC/ha）
+ΔC(t) = C(t) − C(t−1)                                   （tC/ha·年）
+Q(t) = ΔC(t) · 44/12 ÷ 15                               （tCO₂/亩·年）
+
+<em>④ 收益现值（保守定价）</em>
+PV = Σ<sub>i=T₀</sub><sup>T₀+N−1</sup>  A · Q(t₀+i) · P · (1+r)<sup>−i</sup>   （元）
+
+<em>⑤ 区间化输出</em>
+Q ∈ [Q̂·(1−ε), Q̂·(1+ε)]，ε = 15%（纯林）/ 25%（混交）
+          </div>
+        </div>
+
+        <div class="box">
+          <h3>当前树种参数 <span class="tag" id="pTreeName"></span></h3>
+          <p class="desc">参数随左侧选择实时切换。工程示例取值，落地须替换为分省树种参数库。</p>
+          <table id="paramTable"></table>
+          <div class="note info" style="margin-top:12px;">
+            <span>ℹ️</span>
+            <div>WD 木材基本密度、BEF 生物量扩展系数、R 根冠比、CF 含碳率均为林业碳汇核算的标准参数，等级与官方方法学一致；数值为示例量级，正式投产前需以项目所在省二类调查成果校准。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- 敏感性 ---- -->
+    <div class="tabpane" id="tab-sens">
+      <div class="grid2">
+        <div class="box">
+          <h3>碳价敏感性 <span class="tag">40 / 50 / 80 元</span></h3>
+          <p class="desc">固定折现率与评估期，仅变动碳价基准，观察收益现值与增信参考的摆动幅度。</p>
+          <div class="bars" id="priceBars"></div>
+        </div>
+        <div class="box">
+          <h3>折现率敏感性 <span class="tag">3% / 4% / 5%</span></h3>
+          <p class="desc">折现率越高，远期碳汇的当期价值越低；本模型默认取不低于 3% 的审慎折现率。</p>
+          <div class="bars" id="rateBars"></div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px;">
+        <div class="box">
+          <h3>生物物理参数敏感性 <span class="tag">±15% 扰动</span></h3>
+          <p class="desc">对年固碳量影响最大的三个因子单独扰动，用于识别需重点保障的遥感反演精度环节。</p>
+          <div class="bars" id="tornado"></div>
+        </div>
+        <div class="box">
+          <h3>情景对照表 <span class="tag">产出层字段</span></h3>
+          <p class="desc">同一地块在保守 / 中性 / 乐观三种情景下的完整输出，供信贷决策取用。</p>
+          <table id="scenTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- 增信 ---- -->
+    <div class="tabpane" id="tab-credit">
+      <div class="grid2">
+        <div class="box">
+          <h3>绿色信用四维评分 <span class="tag">碳汇权重 ≥30%</span></h3>
+          <p class="desc">碳汇预期收益作为重要增信参考纳入评分，但不是唯一支撑；四维加权得出综合评分，再映射授信额度区间。</p>
+          <div class="bars" id="scoreBars"></div>
+          <div class="copybox" id="scoreFoot"></div>
+        </div>
+        <div class="box">
+          <h3>参考授信方案 <span class="tag">产出层延伸</span></h3>
+          <p class="desc">额度随碳汇资产与经营评分浮动，不作为独立还款来源；本息偿还仍以经营现金流 + 碳汇回款共同覆盖。</p>
+          <div class="ks" style="grid-template-columns:1fr;">
+            <div class="kpi gold">
+              <div class="k"><span>参考授信额度区间</span><span>额度</span></div>
+              <div class="v" id="loanRange">—</div>
+              <div class="s" id="loanNote">—</div>
+            </div>
+            <div class="kpi">
+              <div class="k"><span>碳汇增信贡献（占评分 30%）</span><span>S1</span></div>
+              <div class="v" id="s1v">—</div>
+              <div class="s" id="s1note">—</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <h3 style="font-size:13px;margin-bottom:6px;">弹性还款安排建议</h3>
+            <table id="repayTable"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- 边界 ---- -->
+    <div class="tabpane" id="tab-bound">
+      <div class="box">
+        <h3>估值精度与适用边界 <span class="tag">6.1 必答项</span></h3>
+        <p class="desc">模型不是万能：明确写出它在哪里准、在哪里不准，比一味宣称高精度更能通过评审。</p>
+        <table id="boundTable"></table>
+      </div>
+      <div class="grid2" style="margin-top:14px;">
+        <div class="box">
+          <h3>不确定性来源与控制手段</h3>
+          <table id="uncTable"></table>
+        </div>
+        <div class="box">
+          <h3>上线前的验证要求</h3>
+          <ul style="font-size:13px;color:var(--ink-2);margin:0;padding-left:18px;line-height:2;">
+            <li><b>样地回测：</b>以固定监测样地实测数据回测，测算值与实测值偏差控制在 ±10% 以内方可上线。</li>
+            <li><b>时序自校验：</b>利用 3—5 年时序影像验证年际生长速率；当年固碳量偏离近 5 年均值 ±15%，自动触发异常核查。</li>
+            <li><b>业务交叉验：</b>与农资投入、抚育管理、农产品产出等生产经营数据交叉印证。</li>
+            <li><b>分省参数库：</b>参数来自各省森林资源二类调查成果、乡土树种生长模型与田间试验数据，杜绝全国通用参数带来的系统性偏差。</li>
+            <li><b>季度回测机制：</b>发现偏差超阈值即触发模型参数更新，形成数据飞轮。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note warn" style="margin-top:14px;">
+        <span>⚠️</span>
+        <div>
+          <b>口径核对提示（建议全文统一）：</b>本原型按“<b>吨CO₂/亩·年</b>”严格口径输出，速生丰产林盛期约 0.8—1.5、一般人工林 0.3—0.8、成熟果园 0.1—0.4。
+          文档 6.1 正文举例“年均固碳量 3.8—4.5 吨/亩”，该量级更接近“<b>吨碳/公顷·年</b>”（≈ 3—4 tC/ha·yr），若按吨CO₂/亩口径会高出约 4—6 倍。
+          同理，10.2 节“每亩脐橙林年碳汇收益约 300 元”在本模型口径下约为 <b>20—40 元/亩·年</b>。建议在 6.1 中明确单位口径后，回头统一全篇数字，避免评审现场被追问。
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<footer>
+  工行杯 6.1 农林碳汇量化测算模型 · 交互原型｜参数为工程示例取值，正式投产须以项目所在省官方参数库与固定样地实测数据校准。
+</footer>
+
+<script>
+/* =========================================================
+   模型参数（工程示例取值，量级参考国家森林生物量清单与 IPCC 默认值）
+   ========================================================= */
+const TREES = {
+  "杉木":   {Vcap:360, k:0.080, m:1.75, WD:0.307, BEF:1.634, R:0.22, CF:0.50, note:"南方集体林区第一大树种，速生期固碳能力强"},
+  "马尾松": {Vcap:300, k:0.075, m:1.70, WD:0.380, BEF:1.472, R:0.20, CF:0.50, note:"南方丘陵广布，耐瘠薄，经营粗放"},
+  "湿地松": {Vcap:330, k:0.090, m:1.70, WD:0.424, BEF:1.514, R:0.20, CF:0.50, note:"引种松类，早期生长快"},
+  "落叶松": {Vcap:320, k:0.070, m:1.70, WD:0.490, BEF:1.416, R:0.25, CF:0.50, note:"北方主要用材林，木材密度高"},
+  "杨树":   {Vcap:260, k:0.160, m:1.50, WD:0.378, BEF:1.446, R:0.25, CF:0.50, note:"平原农区短周期工业原料林"},
+  "桉树":   {Vcap:240, k:0.200, m:1.40, WD:0.500, BEF:1.300, R:0.25, CF:0.50, note:"短轮伐期，生长最快，耗水争议需说明"},
+  "毛竹":   {Vcap:200, k:0.180, m:1.30, WD:0.600, BEF:1.200, R:0.30, CF:0.50, note:"竹类固碳速率高，且年年可伐"},
+  "柑橘园": {Vcap:82,  k:0.100, m:1.10, WD:0.550, BEF:1.200, R:0.25, CF:0.47, note:"经济林，生物量路线折算，盛果期后固碳趋缓"},
+  "核桃园": {Vcap:95,  k:0.090, m:1.15, WD:0.580, BEF:1.220, R:0.28, CF:0.47, note:"经济林，果材兼用"},
+  "油茶园": {Vcap:88,  k:0.095, m:1.12, WD:0.560, BEF:1.210, R:0.26, CF:0.47, note:"经济林，南方丘陵常见"}
+};
+const SITE = {"好":1.15, "中":1.00, "差":0.85};
+const MGMT = {"优":1.05, "中":1.00, "差":0.90};
+
+const DEFAULTS = {rate:"0.03", struct:"pure"};
+const PRESETS = [
+  {name:"赣州脐橙园 15亩",  o:{tree:"柑橘园", area:15, age:6,  site:"中", crown:0.70, mgmt:"中", price:50, t0:3, yrs:10, tenure:15, exp:6,  inputLv:"1", ins:1, credit:70, cert:1, region:"江西 · 赣州", rate:"0.03", struct:"pure"}},
+  {name:"三明杉木林 50亩",  o:{tree:"杉木",   area:50, age:12, site:"好", crown:0.80, mgmt:"优", price:50, t0:3, yrs:10, tenure:25, exp:12, inputLv:"2", ins:1, credit:90, cert:1, region:"福建 · 三明", rate:"0.03", struct:"pure"}},
+  {name:"安吉毛竹林 80亩",  o:{tree:"毛竹",   area:80, age:5,  site:"中", crown:0.85, mgmt:"中", price:50, t0:2, yrs:10, tenure:20, exp:8,  inputLv:"2", ins:1, credit:90, cert:1, region:"浙江 · 安吉", rate:"0.03", struct:"pure"}},
+  {name:"河池桉树林 200亩", o:{tree:"桉树",   area:200,age:5,  site:"好", crown:0.85, mgmt:"优", price:50, t0:3, yrs:10, tenure:20, exp:6,  inputLv:"2", ins:0, credit:45, cert:1, region:"广西 · 河池", rate:"0.03", struct:"pure"}},
+  {name:"大理核桃林 40亩",  o:{tree:"核桃园", area:40, age:9,  site:"中", crown:0.70, mgmt:"中", price:50, t0:4, yrs:10, tenure:18, exp:9,  inputLv:"1", ins:1, credit:70, cert:1, region:"云南 · 大理", rate:"0.03", struct:"pure"}}
+];
+
+let state = Object.assign({}, DEFAULTS, PRESETS[1].o);
+
+/* =========================================================
+   模型计算
+   ========================================================= */
+function volume(t, tree, site, crown, mgmt){
+  if(t <= 0) return 0;
+  const p = TREES[tree];
+  const d = Math.max(0.60, Math.min(1.15, crown / 0.75));
+  return p.Vcap * SITE[site] * Math.pow(1 - Math.exp(-p.k * t), p.m) * d * MGMT[mgmt];
+}
+function carbonStock(t, tree, site, crown, mgmt){
+  const p = TREES[tree];
+  return volume(t, tree, site, crown, mgmt) * p.WD * p.BEF * (1 + p.R) * p.CF; // tC/ha
+}
+function annualCO2(t, tree, site, crown, mgmt){
+  const dc = carbonStock(t, tree, site, crown, mgmt) - carbonStock(t-1, tree, site, crown, mgmt);
+  return dc * 44 / 12 / 15; // tCO2/亩·年
+}
+function pvCarbon(area, t0age, tree, price, tStart, yrs, r, site, crown, mgmt){
+  let pv = 0, cum = 0, rows = [];
+  for(let i = tStart; i < tStart + yrs; i++){
+    const q = annualCO2(t0age + i, tree, site, crown, mgmt);
+    const gross = area * q * price;
+    const disc = gross / Math.pow(1 + r, i);
+    pv += disc; cum += area * q;
+    rows.push({year:i, age:t0age+i, q:q, gross:gross, disc:disc});
+  }
+  return {pv:pv, cum:cum, rows:rows};
+}
+function annuityFactor(r, n){ let s = 0; for(let i = 1; i <= n; i++) s += Math.pow(1+r, -i); return s; }
+
+function compute(){
+  const tree = state.tree, p = TREES[tree];
+  const eps  = state.struct === "mixed" ? 0.25 : 0.15;
+  const r    = parseFloat(state.rate) || 0.03;
+  const price= parseFloat(state.price);
+  const area = parseFloat(state.area);
+  const age  = parseFloat(state.age);
+  const t0   = parseFloat(state.t0);
+  const yrs  = parseFloat(state.yrs);
+
+  const qNow  = annualCO2(age, tree, state.site, state.crown, state.mgmt);
+  const qLow  = qNow * (1 - eps), qHigh = qNow * (1 + eps);
+
+  const mid = pvCarbon(area, age, tree, price,   t0, yrs, r, state.site, state.crown, state.mgmt);
+  const low = pvCarbon(area, age, tree, price,   t0, yrs, r, state.site, state.crown, state.mgmt);
+  const pvLow = mid.pv * (1 - eps), pvHigh = mid.pv * (1 + eps);
+  const eqAnnual = mid.pv / annuityFactor(r, yrs);
+
+  // 曲线数据
+  const maxAge = Math.max(age + t0 + yrs, 30);
+  const curve = [];
+  let qmax = 0;
+  for(let t = 1; t <= maxAge; t++){
+    const q = annualCO2(t, tree, state.site, state.crown, state.mgmt);
+    curve.push({t:t, q:q});
+    if(q > qmax) qmax = q;
+  }
+
+  return {tree, p, eps, r, price, area, age, t0, yrs, qNow, qLow, qHigh, pv:mid.pv, pvLow, pvHigh, eqAnnual,
+          cum:mid.cum, curve, qmax, rows:mid.rows};
+}
+
+/* =========================================================
+   信用评分与授信
+   ========================================================= */
+function creditScore(M){
+  const pvWan = M.pv / 10000;
+  const S1 = clamp(40 + 30 * Math.log10(Math.max(pvWan, 0.001) / 0.1), 0, 100);
+  const S2 = clamp((state.cert === 1 ? 60 : 20) + clamp(state.tenure / 30 * 40, 0, 40), 0, 100);
+  const S3 = clamp(30 * Math.min(1, state.exp / 8) + (state.inputLv === "2" ? 30 : state.inputLv === "1" ? 20 : 8) + (state.ins === 1 ? 40 : 0), 0, 100);
+  const S4 = clamp(parseFloat(state.credit), 0, 100);
+  const total = 0.30*S1 + 0.25*S2 + 0.25*S3 + 0.20*S4;
+
+  const baseWan = clamp(5 + (parseFloat(state.area) - 10) / 190 * 15, 3, 20);
+  const center = baseWan * (total / 70);
+  const lo = center * 0.85, hi = center;
+  return {S1, S2, S3, S4, total, baseWan, center, lo, hi, pvWan};
+}
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+/* =========================================================
+   渲染
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const fmt = (v, d=2) => v.toLocaleString("zh-CN", {minimumFractionDigits:d, maximumFractionDigits:d});
+const wan = v => (v/10000).toFixed(2) + " 万元";
+
+function render(){
+  const M = compute();
+  const epsTxt = (M.eps*100).toFixed(0) + "%";
+
+  // ---- KPI ----
+  $("kpis").innerHTML = `
+    <div class="kpi">
+      <div class="k"><span>当年固碳量（区间）</span><span>Q(t₀)</span></div>
+      <div class="v">${M.qLow.toFixed(2)}–${M.qHigh.toFixed(2)}<small>tCO₂/亩·年</small></div>
+      <div class="s">中心值 ${M.qNow.toFixed(3)}｜不确定性 ±${epsTxt}｜≈ ${(M.qNow*15).toFixed(1)} tCO₂/ha·年</div>
+    </div>
+    <div class="kpi">
+      <div class="k"><span>评估期累计固碳量</span><span>ΣQ</span></div>
+      <div class="v">${fmt(M.cum,1)}<small>tCO₂</small></div>
+      <div class="s">${M.yrs} 年评估期 · ${state.area} 亩累计</div>
+    </div>
+    <div class="kpi gold">
+      <div class="k"><span>碳汇收益现值 PV</span><span>折现 ${(M.r*100).toFixed(0)}%</span></div>
+      <div class="v">${fmt(M.pv,0)}<small>元</small></div>
+      <div class="s">区间 ${fmt(M.pvLow,0)} – ${fmt(M.pvHigh,0)} 元｜碳价 ${M.price} 元/吨</div>
+    </div>
+    <div class="kpi red">
+      <div class="k"><span>年均碳汇收益（等额年值）</span><span>PV/年金</span></div>
+      <div class="v">${fmt(M.eqAnnual,0)}<small>元/年</small></div>
+      <div class="s">折合 ${fmt(M.eqAnnual / state.area, 1)} 元/亩·年</div>
+    </div>`;
+
+  // ---- 曲线 ----
+  renderCurve(M);
+
+  // ---- 摘要 ----
+  const C = creditScore(M);
+  $("summary").textContent =
+`【碳汇量化测算摘要】
+地块：${state.region} · ${M.tree} · ${state.area} 亩 · 林龄 ${M.age} 年
+生境：立地${state.site}｜郁闭度 ${state.crown}｜管护${state.mgmt}｜${state.struct === "mixed" ? "混交异龄林" : "人工纯林"}
+————————————————
+当年固碳量：${M.qNow.toFixed(2)} tCO₂/亩·年（区间 ${M.qLow.toFixed(2)}–${M.qHigh.toFixed(2)}）
+折算：${(M.qNow*15).toFixed(1)} tCO₂/ha·年 ＝ ${(M.qNow*15/3.6667).toFixed(2)} tC/ha·年
+评估期（第 ${M.t0}–${M.t0+M.yrs-1} 年）累计固碳：${fmt(M.cum,1)} tCO₂
+碳价基准：${M.price} 元/tCO₂（近 3 年均价 × 80%）｜折现率：${(M.r*100).toFixed(0)}%
+收益现值 PV：${fmt(M.pv,0)} 元（区间 ${fmt(M.pvLow,0)}–${fmt(M.pvHigh,0)}）
+年均等额碳汇收益：${fmt(M.eqAnnual,0)} 元
+————————————————
+四维信用评分：碳汇 ${C.S1.toFixed(0)}／林地 ${C.S2.toFixed(0)}／经营 ${C.S3.toFixed(0)}／信用 ${C.S4.toFixed(0)}
+综合评分：${C.total.toFixed(1)} 分（碳汇权重 30%）
+参考授信额度：${C.lo.toFixed(1)}–${C.hi.toFixed(1)} 万元`;
+
+  // ---- 参数表 ----
+  $("pTreeName").textContent = M.tree;
+  $("paramTable").innerHTML = `
+    <tr><th>参数</th><th>符号</th><th>取值</th><th>说明</th></tr>
+    <tr><td>蓄积量上限</td><td>V<sub>cap</sub></td><td class="num">${M.p.Vcap} m³/ha</td><td>成熟林分潜在蓄积量</td></tr>
+    <tr><td>生长速率系数</td><td>k</td><td class="num">${M.p.k}</td><td>控制生长曲线陡缓</td></tr>
+    <tr><td>曲线形状指数</td><td>m</td><td class="num">${M.p.m}</td><td>Richards 型形状参数</td></tr>
+    <tr><td>木材基本密度</td><td>WD</td><td class="num">${M.p.WD} t/m³</td><td>生物量换算基准</td></tr>
+    <tr><td>生物量扩展系数</td><td>BEF</td><td class="num">${M.p.BEF}</td><td>干材→全株生物量</td></tr>
+    <tr><td>根冠比</td><td>R</td><td class="num">${M.p.R}</td><td>地下部分生物量</td></tr>
+    <tr><td>含碳率</td><td>CF</td><td class="num">${M.p.CF} tC/t</td><td>干物质含碳比例</td></tr>
+    <tr><td colspan="4" style="color:#7d8f87;">特征：${M.p.note}</td></tr>`;
+
+  // ---- 敏感性 ----
+  renderSens(M);
+
+  // ---- 评分与授信 ----
+  const bars = [
+    {n:"① 碳汇预期收益（权重 30%）", v:C.S1, s:`现值 ${wan(M.pv)}`},
+    {n:"② 林地经营权稳定性（权重 25%）", v:C.S2, s:`${state.cert===1?"已确权":"未确权"} · 剩余 ${state.tenure} 年`},
+    {n:"③ 生产经营行为（权重 25%）", v:C.S3, s:`经营 ${state.exp} 年 · ${state.ins===1?"已参保":"未参保"}`},
+    {n:"④ 主体信用记录（权重 20%）", v:C.S4, s:$("credit").selectedOptions[0].textContent}
+  ];
+  $("scoreBars").innerHTML = bars.map(b => `
+    <div class="bar">
+      <div class="lb"><span>${b.n}</span><b>${b.v.toFixed(1)} 分</b></div>
+      <div class="track"><i style="width:${b.v}%"></i></div>
+      <div style="font-size:11.5px;color:#8b9a93;margin-top:3px;">${b.s}</div>
+    </div>`).join("");
+  $("scoreFoot").textContent =
+`综合评分 = 0.30×${C.S1.toFixed(1)} + 0.25×${C.S2.toFixed(1)} + 0.25×${C.S3.toFixed(1)} + 0.20×${C.S4.toFixed(1)} = ${C.total.toFixed(1)} 分
+（评分基准线 70 分对应面积基准额度 ${C.baseWan.toFixed(1)} 万元）`;
+
+  $("loanRange").innerHTML = `${C.lo.toFixed(1)}–${C.hi.toFixed(1)}<small>万元</small>`;
+  $("loanNote").textContent = `面积基准 ${C.baseWan.toFixed(1)} 万元 × 评分系数 ${(C.total/70).toFixed(2)}；单户上限 20 万元（10—200 亩档）`;
+  $("s1v").innerHTML = `${C.S1.toFixed(0)}<small>分</small>`;
+  $("s1note").textContent = `由碳汇收益现值 ${wan(M.pv)} 按对数映射得出，不构成独立还款来源`;
+
+  // 还款表
+  const grace = M.age < 8 ? 3 : 2;
+  const totalYears = clamp(Math.round(3 + M.age / 4), 3, 8);
+  $("repayTable").innerHTML = `
+    <tr><th>阶段</th><th>年限</th><th>还款安排</th></tr>
+    <tr><td>抚育期</td><td>第 1–${grace} 年</td><td>只还息不还本（或申请少量还本），匹配无经营性收入阶段</td></tr>
+    <tr><td>过渡期</td><td>第 ${grace+1}–${Math.max(grace+1,totalYears-2)} 年</td><td>碳汇逐步可交易，按 10%–30% 比例分期还本</td></tr>
+    <tr><td>还款期</td><td>第 ${Math.max(grace+1,totalYears-1)}–${totalYears} 年</td><td>碳汇回款进入监管账户自动划扣，剩余部分归农户</td></tr>
+    <tr><td>建议贷款期限</td><td colspan="2">${totalYears} 年（依树种、林龄与碳汇开发节奏分档，区间 3–8 年）</td></tr>`;
+
+  // ---- 边界表 ----
+  $("boundTable").innerHTML = `
+    <tr><th>适用条件</th><th>模型表现</th><th>使用要求</th></tr>
+    <tr><td>树种单一、树龄均匀的人工林</td><td>估值误差可控制在 <b>±15%</b> 以内</td><td>可直接用于授信参考</td></tr>
+    <tr><td>混交林、树龄差异较大的地块</td><td>误差可能扩大至 <b>±25%</b></td><td>须结合地面抽样校准</td></tr>
+    <tr><td>连片 ≥10 亩</td><td>Sentinel-2（10m / 5 天）可实现有效识别</td><td>常规批量测算</td></tr>
+    <tr><td>破碎地块 &lt;10 亩</td><td>像元混合严重，识别精度下降</td><td>提高采样频率 + 人工复核</td></tr>
+    <tr><td>林龄 ≥5 年、郁闭度 ≥0.4</td><td>生长曲线拟合良好</td><td>模型主适用区间</td></tr>
+    <tr><td>幼龄林（&lt;5 年）</td><td>生物量基数小，模型易高估</td><td>以实测抽样替代模型输出</td></tr>
+    <tr><td>输出形式</td><td>一律以<b>区间</b>输出，而非单一数值</td><td>反映不确定性，供风险定价使用</td></tr>`;
+
+  $("uncTable").innerHTML = `
+    <tr><th>不确定性来源</th><th>控制手段</th></tr>
+    <tr><td>遥感反演误差（光照、大气、地形）</td><td>辐射定标 + 大气校正 + 地形校正；植被参数反演精度控在 85% 以上</td></tr>
+    <tr><td>参数区域偏差</td><td>建立分省分树种参数库，不用全国通用参数</td></tr>
+    <tr><td>树龄信息不准</td><td>时序影像反推 + 农户申报 + 地面抽样三方校验</td></tr>
+    <tr><td>灾害与人为干扰</td><td>干扰因子修正；年固碳量偏离近 5 年均值 ±15% 触发异常核查</td></tr>
+    <tr><td>碳价波动（估值端）</td><td>取近 3 年均价 80%，不做激进涨幅预测</td></tr>`;
+}
+
+function renderCurve(M){
+  const W = 560, H = 230, padL = 46, padR = 14, padT = 14, padB = 32;
+  const n = M.curve.length;
+  const x = t => padL + (t - 1) / (n - 1) * (W - padL - padR);
+  const yMax = M.qmax * 1.12 || 1;
+  const y = q => H - padB - q / yMax * (H - padT - padB);
+
+  let path = "";
+  M.curve.forEach((d, i) => { path += (i ? "L" : "M") + x(d.t).toFixed(1) + " " + y(d.q).toFixed(1); });
+
+  // 评估期区间
+  const s = M.age + M.t0, e = M.age + M.t0 + M.yrs - 1;
+  const bandX = x(s), bandW = Math.max(2, x(e) - x(s));
+
+  // 网格与刻度
+  let grid = "";
+  for(let i = 0; i <= 4; i++){
+    const gv = yMax * i / 4, gy = y(gv);
+    grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-padR}" y2="${gy.toFixed(1)}" stroke="#e6ede9" stroke-width="1"/>
+             <text x="${padL-8}" y="${(gy+4).toFixed(1)}" font-size="10" fill="#8b9a93" text-anchor="end">${gv.toFixed(1)}</text>`;
+  } 
+  let ticks = "";
+  const step = n > 30 ? 5 : n > 15 ? 3 : 2;
+  for(let t = 1; t <= n; t += step){
+    ticks += `<text x="${x(t).toFixed(1)}" y="${H-12}" font-size="10" fill="#8b9a93" text-anchor="middle">${t}</text>`;
+  }
+
+  $("chart").innerHTML = `
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="年固碳量随林龄变化曲线">
+    ${grid}
+    <rect x="${bandX.toFixed(1)}" y="${padT}" width="${bandW.toFixed(1)}" height="${H-padT-padB}" fill="#c9a227" opacity="0.14"/>
+    <text x="${(bandX+bandW/2).toFixed(1)}" y="${padT+12}" font-size="10.5" fill="#a3851c" text-anchor="middle">收益评估期</text>
+    <path d="${path}" fill="none" stroke="#1a8a5e" stroke-width="2.2" stroke-linejoin="round"/>
+    <line x1="${x(M.age).toFixed(1)}" y1="${padT}" x2="${x(M.age).toFixed(1)}" y2="${H-padB}" stroke="#c7000b" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <circle cx="${x(M.age).toFixed(1)}" cy="${y(M.qNow).toFixed(1)}" r="4" fill="#c7000b"/>
+    <text x="${(x(M.age)+6).toFixed(1)}" y="${(y(M.qNow)-8).toFixed(1)}" font-size="10.5" fill="#c7000b">当前 ${M.qNow.toFixed(2)}</text>
+    <text x="${padL}" y="${H-1}" font-size="10" fill="#8b9a93">林龄（年）→</text>
+    <text x="4" y="${padT+2}" font-size="10" fill="#8b9a93">tCO₂/亩·年</text>
+  </svg>`;
+}
+
+function renderSens(M){
+  const prices = [40, 50, 80];
+  const pvs = prices.map(p => pvCarbon(M.area, M.age, M.tree, p, M.t0, M.yrs, M.r, state.site, state.crown, state.mgmt).pv);
+  const mx = Math.max(...pvs);
+  $("priceBars").innerHTML = prices.map((p, i) => `
+    <div class="bar">
+      <div class="lb"><span>碳价 ${p} 元/吨 ${p===50?"（中性基准）":p<50?"（保守）":"（乐观）"}</span><b>${fmt(pvs[i],0)} 元</b></div>
+      <div class="track"><i class="${i===1?"gold":""}" style="width:${(pvs[i]/mx*100).toFixed(1)}%"></i></div>
+      <div style="font-size:11.5px;color:#8b9a93;margin-top:3px;">增信参考 = PV × 2.5 ≈ ${wan(pvs[i]*2.5)}</div>
+    </div>`).join("");
+
+  const rates = [0.03, 0.04, 0.05];
+  const rpvs = rates.map(r => pvCarbon(M.area, M.age, M.tree, M.price, M.t0, M.yrs, r, state.site, state.crown, state.mgmt).pv);
+  const rmx = Math.max(...rpvs);
+  $("rateBars").innerHTML = rates.map((r, i) => `
+    <div class="bar">
+      <div class="lb"><span>折现率 ${(r*100).toFixed(0)}%</span><b>${fmt(rpvs[i],0)} 元</b></div>
+      <div class="track"><i style="width:${(rpvs[i]/rmx*100).toFixed(1)}%"></i></div>
+      <div style="font-size:11.5px;color:#8b9a93;margin-top:3px;">相对 3% 口径变动 ${((rpvs[i]/rpvs[0]-1)*100).toFixed(1)}%</div>
+    </div>`).join("");
+
+  // 龙卷风图：三个生物物理因子 ±15%
+  const base = M.qNow;
+  const items = [
+    {n:"郁闭度反演", lo:annualCO2(M.age, M.tree, state.site, clamp(state.crown*0.85,0.2,1), state.mgmt), hi:annualCO2(M.age, M.tree, state.site, clamp(state.crown*1.15,0.2,1), state.mgmt)},
+    {n:"立地/地位级", lo:annualCO2(M.age, M.tree, state.site==="好"?"中":"差", state.crown, state.mgmt), hi:annualCO2(M.age, M.tree, state.site==="差"?"中":"好", state.crown, state.mgmt)},
+    {n:"管护水平", lo:annualCO2(M.age, M.tree, state.site, state.crown, state.mgmt==="优"?"中":"差"), hi:annualCO2(M.age, M.tree, state.site, state.crown, state.mgmt==="差"?"中":"优")}
+  ];
+  const span = Math.max(...items.map(i => Math.max(Math.abs(i.hi-base), Math.abs(base-i.lo)))) || 1;
+  $("tornado").innerHTML = items.map(it => {
+    const lp = Math.abs(base - it.lo) / span * 50, rp = Math.abs(it.hi - base) / span * 50;
+    return `<div class="bar">
+      <div class="lb"><span>${it.n}</span><b>${it.lo.toFixed(2)} → ${it.hi.toFixed(2)}</b></div>
+      <div style="display:flex;align-items:center;height:12px;">
+        <div style="flex:1;display:flex;justify-content:flex-end;"><div style="width:${lp.toFixed(1)}%;height:11px;background:#e6b8ba;border-radius:6px 0 0 6px;"></div></div>
+        <div style="width:2px;height:14px;background:#4a5d55;"></div>
+        <div style="flex:1;"><div style="width:${rp.toFixed(1)}%;height:11px;background:#9fd3b9;border-radius:0 6px 6px 0;"></div></div>
+      </div>
+      <div style="font-size:11.5px;color:#8b9a93;margin-top:3px;">基准 ${base.toFixed(2)}，摆动 ${((it.hi-it.lo)/base*100).toFixed(1)}%</div>
+    </div>`;
+  }).join("");
+
+  // 情景表
+  const rows = [["保守（40 元）", 40], ["中性（50 元）", 50], ["乐观（80 元）", 80]].map(([n, p]) => {
+    const res = pvCarbon(M.area, M.age, M.tree, p, M.t0, M.yrs, M.r, state.site, state.crown, state.mgmt);
+    return `<tr><td>${n}</td><td class="num">${fmt(res.cum,1)}</td><td class="num">${fmt(res.pv,0)}</td><td class="num">${(res.pv*2.5/10000).toFixed(2)}</td></tr>`;
+  }).join("");
+  $("scenTable").innerHTML = `
+    <tr><th>情景</th><th>累计固碳（tCO₂）</th><th>收益现值（元）</th><th>增信参考（万元）</th></tr>${rows}`;
+}
+
+/* =========================================================
+   交互绑定
+   ========================================================= */
+function seg(id, key, cast){
+  const el = $(id);
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return;
+    [...el.children].forEach(c => c.classList.remove("on"));
+    b.classList.add("on");
+    state[key] = cast ? cast(b.dataset.v) : b.dataset.v;
+    render();
+  });
+}
+seg("siteSeg","site"); seg("mgmtSeg","mgmt"); seg("structSeg","struct");
+seg("rateSeg","rate"); seg("certSeg","cert", Number); seg("inputSeg","inputLv"); seg("insSeg","ins", Number);
+
+function bindRange(id, key, label, digits){
+  const el = $(id);
+  el.addEventListener("input", () => {
+    state[key] = el.value;
+    if(label) $(label).textContent = digits ? parseFloat(el.value).toFixed(digits) : el.value;
+    render();
+  });
+}
+bindRange("area","area","areaV"); bindRange("age","age","ageV");
+bindRange("crown","crown","crownV",2); bindRange("price","price","priceV");
+bindRange("t0","t0","t0V"); bindRange("yrs","yrs","yrV");
+bindRange("tenure","tenure","tenureV"); bindRange("exp","exp","expV");
+$("credit").addEventListener("change", () => { state.credit = $("credit").value; render(); });
+$("region").addEventListener("change", () => { state.region = $("region").value; render(); });
+$("tree").addEventListener("change", () => { state.tree = $("tree").value; render(); });
+
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  [...$("tabs").children].forEach(c => c.classList.remove("on"));
+  b.classList.add("on");
+  document.querySelectorAll(".tabpane").forEach(p => p.classList.remove("on"));
+  $("tab-" + b.dataset.tab).classList.add("on");
+});
+
+document.querySelectorAll(".presets").forEach(() => {});
+$("presets").innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p.name}</button>`).join("");
+$("presets").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  Object.assign(state, PRESETS[+b.dataset.i].o);
+  syncUI(); render();
+});
+$("resetBtn").addEventListener("click", () => { Object.assign(state, PRESETS[1].o); syncUI(); render(); });
+
+$("copyBtn").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText($("summary").textContent); $("copyBtn").textContent = "已复制 ✓";
+       setTimeout(() => $("copyBtn").textContent = "复制摘要", 1600);}catch(err){ alert("复制失败，请手动选中文本复制。"); }
+});
+$("printBtn").addEventListener("click", () => window.print());
+
+function syncUI(){
+  $("tree").value = state.tree;
+  $("region").value = state.region;
+  $("area").value = state.area; $("areaV").textContent = state.area;
+  $("age").value = state.age;   $("ageV").textContent = state.age;
+  $("crown").value = state.crown; $("crownV").textContent = (state.crown*1).toFixed(2);
+  $("price").value = state.price; $("priceV").textContent = state.price;
+  $("t0").value = state.t0; $("t0V").textContent = state.t0;
+  $("yrs").value = state.yrs; $("yrV").textContent = state.yrs;
+  $("tenure").value = state.tenure; $("tenureV").textContent = state.tenure;
+  $("exp").value = state.exp; $("expV").textContent = state.exp;
+  $("credit").value = state.credit;
+  setSeg("siteSeg", state.site); setSeg("mgmtSeg", state.mgmt); setSeg("structSeg", state.struct);
+  setSeg("rateSeg", String(state.rate)); setSeg("certSeg", String(state.cert));
+  setSeg("inputSeg", String(state.inputLv)); setSeg("insSeg", String(state.ins));
+}
+function setSeg(id, v){ [...$(id).children].forEach(b => b.classList.toggle("on", b.dataset.v === String(v))); }
+
+// 初始化
+$("tree").innerHTML = Object.keys(TREES).map(t => `<option>${t}</option>`).join("");
+syncUI();
+render();
+</script>
+</body>
+</html>
